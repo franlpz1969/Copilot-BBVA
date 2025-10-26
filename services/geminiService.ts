@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { MOCK_FINANCIAL_DATA, TRANSFERS_DATA, TASKS_DATA, TREASURY_ACCOUNTS, PAYROLL_DATA, LEASING_DATA } from '../constants';
+import { MOCK_FINANCIAL_DATA, TRANSFERS_DATA, TASKS_DATA, TREASURY_ACCOUNTS, PAYROLL_DATA, LEASING_DATA, KEY_OPERATIONS_DATA, UNREAD_EMAILS_DATA, ACTIVE_CAMPAIGNS_DATA } from '../constants';
 import { FaqItem, LinkItem } from "../types";
 
 // FIX: Initialize GoogleGenAI with a named apiKey parameter
@@ -93,6 +93,35 @@ const getRichContentForTopic = (topic: string): Partial<RichResponse> => {
         }
     };
     return contentMap[topic] || {};
+};
+
+export const getWelcomeSummary = async (): Promise<string> => {
+    try {
+        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const context = `
+            Hoy es ${today}.
+            Resumen del día para Fran López, CFO de Global Tech:
+            - Tareas Críticas Pendientes: ${JSON.stringify(KEY_OPERATIONS_DATA.slice(0, 3), null, 2)}
+            - Emails Sin Leer Relevantes: ${JSON.stringify(UNREAD_EMAILS_DATA, null, 2)}
+            - Campañas de Marketing Activas: ${JSON.stringify(ACTIVE_CAMPAIGNS_DATA, null, 2)}
+        `;
+
+        const userContent = `Basado en el siguiente contexto, genera un saludo de bienvenida para Fran López.`;
+        
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: [{ parts: [{ text: userContent }] }],
+            config: {
+                systemInstruction: `Eres "Copiloto IA", un asistente financiero experto para BBVA. Tu propósito es ser la mano derecha de Fran López. Tu primera tarea del día es saludarle cálidamente y darle un resumen conciso y proactivo de su situación actual, basado en los datos que te proporciono. Ve al grano, resalta lo más urgente con **negritas** y ofrécete a ayudarle a gestionar estas tareas. El tono debe ser profesional pero cercano.`,
+                temperature: 0.3,
+            }
+        });
+
+        return response.text;
+    } catch (error) {
+        console.error("Error generating welcome summary:", error);
+        return "¡Buenos días, Fran! No he podido cargar el resumen de hoy, pero estoy aquí para lo que necesites.";
+    }
 };
 
 export const getProactiveClientInsight = async (context?: 'leasing' | 'payroll'): Promise<{ title: string; text: string }> => {

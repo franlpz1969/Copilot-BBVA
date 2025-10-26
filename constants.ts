@@ -1,4 +1,4 @@
-import { FinancialData, Task, Transfer, RecommendedAction, CashFlowDataPoint, LiquidityDataPoint, CashFlowProjectionPoint, ConciliationMovement, Account, TpvSummary, CreditLine, KeyOperation, SustainabilityData, TpvData, PayrollBatch, LeasingContract, PayrollHistoryPoint, ComplianceAlert, ProductRecommendation, SimulationScenario, ChatSession } from './types';
+import { FinancialData, Task, Transfer, RecommendedAction, CashFlowDataPoint, LiquidityDataPoint, CashFlowProjectionPoint, ConciliationMovement, Account, TpvSummary, CreditLine, KeyOperation, SustainabilityData, TpvData, PayrollBatch, LeasingContract, PayrollHistoryPoint, ComplianceAlert, ProductRecommendation, SimulationScenario, Communication, UnreadEmail, MarketingCampaign } from './types';
 
 export const MOCK_FINANCIAL_DATA: FinancialData = {
   accounts: [
@@ -179,13 +179,13 @@ export const RECOMMENDED_ACTIONS_DATA: RecommendedAction[] = [
     { id: 3, title: 'Nuevo informe disponible', description: 'Informe de tesorería de Julio 2024 generado.', icon: 'report', linkText: 'Ver informe' },
 ];
 
-export const CASH_FLOW_DATA: CashFlowDataPoint[] = [
-    { date: 'Ene', income: 45000, expenses: 22500 },
-    { date: 'Feb', income: 52000, expenses: 31000 },
-    { date: 'Mar', income: 48000, expenses: 25000 },
-    { date: 'Abr', income: 61000, expenses: 34000 },
-    { date: 'May', income: 55000, expenses: 29000 },
-    { date: 'Jun', income: 65000, expenses: 38000 },
+export const CASH_FLOW_DATA: (CashFlowDataPoint & { netFlow: number })[] = [
+    { date: 'Ene', income: 45000, expenses: 22500, netFlow: 22500 },
+    { date: 'Feb', income: 52000, expenses: 31000, netFlow: 21000 },
+    { date: 'Mar', income: 48000, expenses: 25000, netFlow: 23000 },
+    { date: 'Abr', income: 61000, expenses: 34000, netFlow: 27000 },
+    { date: 'May', income: 55000, expenses: 29000, netFlow: 26000 },
+    { date: 'Jun', income: 65000, expenses: 41000, netFlow: 24000 },
 ];
 
 export const LIQUIDITY_DATA: LiquidityDataPoint[] = [
@@ -245,35 +245,65 @@ export const SIMULATION_SCENARIOS_DATA: SimulationScenario[] = [
     { id: 'pri', title: 'Ajuste de Precios (+3%)', description: 'Aplica un incremento moderado del 3% en tu catálogo de productos principal.', impact: { revenue: 3, margin: 3.5, cashFlow: 3 } },
 ];
 
-export const CHAT_HISTORY_DATA: ChatSession[] = [
+export const COMMUNICATIONS_HISTORY_DATA: Communication[] = [
     {
-        id: 1,
-        title: "Análisis de gastos de Q2",
-        date: "Ayer, 14:30",
+        id: 'comm-1',
+        channel: 'Copilot AI',
+        date: 'Ayer, 14:30',
+        summary: 'Análisis de gastos de Q2',
+        agent: 'Copiloto IA',
+        details: 'El cliente solicitó un resumen de los gastos del último trimestre. Se identificó un aumento del 20% en Marketing, concentrado en Publicidad Online debido a una nueva campaña de verano.',
         messages: [
-            { text: "Resume mis gastos del último trimestre, por favor.", isUser: true, timestamp: "14:30:15" },
-            { text: "Claro, Fran. En el Q2, tus gastos totales fueron de **88,500€**. Las partidas más importantes fueron **Nóminas (45%)**, **Proveedores (30%)** y **Marketing (15%)**. Destaca un aumento del 20% en Marketing respecto al Q1. ¿Quieres que detalle esta partida?", isUser: false, timestamp: "14:30:45" },
-            { text: "Sí, desglosa Marketing.", isUser: true, timestamp: "14:31:05" },
-            { text: "El gasto en Marketing se divide en **Publicidad Online (70%)**, **Eventos (20%)** y **Software (10%)**. El aumento se concentra en Publicidad Online, por la nueva campaña de verano.", isUser: false, timestamp: "14:31:50" },
+            { sender: 'user', text: 'Analiza mis gastos del último trimestre' },
+            { sender: 'agent', text: 'Claro, Fran. He analizado los gastos de Q2. El total es de 75.500€. La partida que más ha aumentado es Marketing, con un incremento del 20% respecto a Q1, principalmente por la nueva campaña de verano. ¿Quieres que te muestre el desglose?' }
         ]
     },
     {
-        id: 2,
-        title: "Transferencia a Global Imports",
-        date: "Hace 3 días",
+        id: 'comm-2',
+        channel: 'Call Center',
+        date: 'Hace 2 días, 10:15',
+        summary: 'Consulta sobre comisiones de TPV',
+        agent: 'Sonia García',
+        details: 'El cliente llamó para informarse sobre las comisiones aplicadas a su TPV de la Tienda Central. Se le explicó el desglose de tarifas y se le informó sobre la posibilidad de renegociar por volumen de facturación. Se envió un email con el resumen.'
+    },
+    {
+        id: 'comm-3',
+        channel: 'WhatsApp',
+        date: 'Hace 3 días, 16:45',
+        summary: 'Bloqueo temporal de tarjeta de empresa',
+        agent: 'Bot de Asistencia',
+        details: 'El cliente reportó la pérdida de la tarjeta de empresa (acabada en *4567). Se procedió al bloqueo inmediato a través del bot de WhatsApp. Se le informó que una nueva tarjeta será enviada a su domicilio fiscal.',
         messages: [
-            { text: "Prepara una transferencia para Global Imports Inc. por 150,000 EUR", isUser: true, timestamp: "09:15:20" },
-            { text: "He preparado la transferencia. Como es un **proveedor nuevo** y el **importe es elevado**, la he marcado como de **Alto Riesgo**. Requiere tu firma y una segunda verificación. ¿Todo correcto?", isUser: false, timestamp: "09:15:40" },
+            { sender: 'user', text: 'He perdido mi tarjeta de empresa' },
+            { sender: 'bot', text: 'Entendido. Por seguridad, necesito que me confirmes los últimos 4 dígitos de la tarjeta que has perdido.' },
+            { sender: 'user', text: 'Termina en 4567' },
+            { sender: 'bot', text: 'Gracias, Fran. He procedido al bloqueo inmediato de la tarjeta acabada en *4567. Se ha solicitado una nueva que llegará a tu domicilio fiscal en 3-5 días laborables. ¿Necesitas algo más?' },
+            { sender: 'user', text: 'No, gracias' }
         ]
     },
     {
-        id: 3,
-        title: "Consulta sobre TPVs",
-        date: "La semana pasada",
-        messages: [
-            { text: "Necesito contratar un TPV nuevo para un evento el mes que viene", isUser: true, timestamp: "11:45:10" },
-            { text: "Entendido. Para eventos, te recomiendo el **TPV Móvil Avanzado**. Tiene conexión 4G y una batería de larga duración. He preparado el formulario de solicitud. ¿Quieres que lo completemos ahora?", isUser: false, timestamp: "11:45:55" },
-            { text: "Perfecto, empecemos", isUser: true, timestamp: "11:46:12" },
-        ]
+        id: 'comm-4',
+        channel: 'Copilot AI',
+        date: 'Hace 4 días, 09:15',
+        summary: 'Preparación de transferencia a Global Imports',
+        agent: 'Copiloto IA',
+        details: 'Se preparó una transferencia de 150,000 EUR para un nuevo proveedor, Global Imports Inc. Se marcó como de Alto Riesgo, requiriendo doble verificación, lo cual fue aceptado por el cliente.'
+    },
+    {
+        id: 'comm-5',
+        channel: 'Oficina',
+        date: 'La semana pasada',
+        summary: 'Reunión de planificación de leasing',
+        agent: 'Carlos Fernández',
+        details: 'Reunión en la oficina para discutir la renovación del leasing del Audi A6. Se presentaron varias opciones de vehículos, incluyendo modelos híbridos y eléctricos, con sus respectivas proyecciones de ahorro en combustible y beneficios fiscales.'
     }
+];
+
+export const UNREAD_EMAILS_DATA: UnreadEmail[] = [
+    { id: 'email-1', from: 'Proveedor Logístico', subject: 'URGENTE: Retraso en entrega de mercancía', isUrgent: true },
+    { id: 'email-2', from: 'Asociación de Empresarios', subject: 'Invitación al networking de Septiembre', isUrgent: false },
+];
+
+export const ACTIVE_CAMPAIGNS_DATA: MarketingCampaign[] = [
+    { id: 'camp-1', name: 'Campaña de Verano 2024', description: 'Promoción de servicios de consultoría con un 15% de descuento.', status: 'active' },
 ];

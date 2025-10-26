@@ -1,218 +1,221 @@
-import React, { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { 
-    CalculatorIcon, LightBulbIcon, SparklesIcon, DocumentIcon,
-    ShieldCheckIcon, ChartBarIcon, CreditCardIcon,
-    ReceiptPercentIcon
-} from '../components/icons/index';
-import { SIMULATION_SCENARIOS_DATA, COMPLIANCE_ALERTS_DATA, PRODUCT_RECOMMENDATIONS_DATA } from '../constants';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    MOCK_FINANCIAL_DATA,
+    CASH_FLOW_DATA,
+    SIMULATION_SCENARIOS_DATA,
+    TPV_SUMMARY_DATA,
+    CREDIT_LINE_DATA,
+    SUSTAINABILITY_DATA,
+    PAYROLL_DATA,
+    LEASING_DATA,
+    COMPLIANCE_ALERTS_DATA
+} from '../constants';
+import { SimulationScenario, CashFlowDataPoint, TimelineEvent } from '../types';
+import DashboardCard from '../components/DashboardCard';
+import CashFlowChart from '../components/CashFlowChart';
 import AiAssistantPanel from '../components/AiAssistantPanel';
-import { SimulationScenario, SimulationResult, ComplianceAlert, ProductRecommendation } from '../types';
+import KeyEventsTimeline from '../components/KeyEventsTimeline';
+import DashboardStatCard from '../components/DashboardStatCard';
+import UpcomingAlerts from '../components/UpcomingAlerts';
+import { getWelcomeSummary } from '../services/geminiService';
+
+import { CalculatorIcon, XIcon, UserGroupIcon, KeyIcon, DocumentIcon, ReceiptPercentIcon, BanknotesIcon, LeafIcon, GavelIcon, CreditCardIcon } from '../components/icons';
 import HelpTooltip from '../components/HelpTooltip';
 
-const initialData = { revenue: 1200000, margin: 18, cashFlow: 85000 };
-
-// --- NEW AI-DRIVEN SIMULATOR COMPONENT ---
-const AiDrivenSimulatorCard = () => {
-    const [selectedScenario, setSelectedScenario] = useState<SimulationScenario | null>(null);
-    const [simulation, setSimulation] = useState<SimulationResult | null>(null);
-
-    const runSimulation = (scenario: SimulationScenario) => {
-        if (selectedScenario?.id === scenario.id) {
-            setSelectedScenario(null);
-            setSimulation(null);
-        } else {
-            setSelectedScenario(scenario);
-            setSimulation({
-                newRevenue: initialData.revenue * (1 + (scenario.impact.revenue / 100)),
-                newMargin: initialData.margin * (1 + (scenario.impact.margin / 100)),
-                newCashFlow: initialData.cashFlow * (1 + (scenario.impact.cashFlow / 100)),
-            });
-        }
-    };
-    
-    const simulationChartData = simulation ? [
-        { name: 'Ingresos', Actual: initialData.revenue, Proyectado: simulation.newRevenue },
-        { name: 'Flujo de Caja', Actual: initialData.cashFlow, Proyectado: simulation.newCashFlow },
-    ] : [];
-
-    return (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                    <CalculatorIcon className="h-6 w-6 text-white bg-bbva-accent p-1 rounded-md" />
-                    <h3 className="text-lg font-semibold text-gray-800">Simulador de Estrategias IA</h3>
-                </div>
-                <HelpTooltip content="Selecciona un escenario propuesto por la IA para visualizar su impacto proyectado en tus métricas clave de negocio." />
-            </div>
-            <p className="text-sm text-gray-600 mb-4">Selecciona una recomendación de la IA para visualizar su impacto potencial en tus finanzas.</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                {SIMULATION_SCENARIOS_DATA.map(scenario => (
-                    <button key={scenario.id} onClick={() => runSimulation(scenario)} className={`p-3 border rounded-lg text-left transition-all duration-200 ${selectedScenario?.id === scenario.id ? 'bg-bbva-accent shadow-md' : 'bg-gray-50 hover:bg-gray-100'}`}>
-                        <p className={`font-semibold text-sm ${selectedScenario?.id === scenario.id ? 'text-white' : 'text-gray-800'}`}>{scenario.title}</p>
-                        <p className={`text-xs ${selectedScenario?.id === scenario.id ? 'text-white/80' : 'text-gray-500'}`}>{scenario.description}</p>
-                    </button>
-                ))}
-            </div>
-
-            {simulation && (
-                <div className="bg-bbva-light-blue p-4 rounded-lg border border-blue-200 animate-fade-in-down">
-                    <h4 className="font-semibold text-bbva-blue mb-2">Resultados de la Simulación: "{selectedScenario?.title}"</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="h-56">
-                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={simulationChartData} margin={{top: 20, right: 20, left: 0, bottom: 5}}>
-                                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                                    <YAxis tickFormatter={(val) => `${val/1000}k`} tick={{ fontSize: 12 }}/>
-                                    <Tooltip formatter={(value: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits:0 }).format(value)}/>
-                                    <Legend wrapperStyle={{fontSize: "12px"}}/>
-                                    <Bar dataKey="Actual" fill="#a0aec0" name="Actual" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Proyectado" fill="#1464A5" name="Proyectado" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex flex-col justify-center space-y-3">
-                            <div><p className="text-sm text-gray-500">Nuevo Margen Bruto Proyectado</p><p className="text-2xl font-bold text-bbva-blue">{(simulation.newMargin).toFixed(2)}%</p></div>
-                             <div><p className="text-sm text-gray-500">Nuevos Ingresos Proyectados</p><p className="text-lg font-bold text-bbva-blue">{simulation.newRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 })}</p></div>
-                            <div><p className="text-sm text-gray-500">Nuevo Flujo de Caja Proyectado</p><p className="text-lg font-bold text-bbva-blue">{simulation.newCashFlow.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 })}</p></div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+const initialKpis = {
+    totalBalance: MOCK_FINANCIAL_DATA.summary.totalBalance,
 };
 
-// --- NEW COMPLIANCE ALERTS COMPONENT ---
-const ComplianceAlertsCard: React.FC<{ onNavigate: (screen: string) => void }> = ({ onNavigate }) => {
-    const severityStyles = {
-        high: 'bg-bbva-light-blue text-bbva-blue border-bbva-accent',
-        medium: 'bg-gray-100 text-gray-800 border-gray-400',
-        low: 'bg-gray-50 text-gray-600 border-gray-300'
-    };
-    const iconMap = { 'Documento': DocumentIcon, 'Impuestos': ReceiptPercentIcon, 'Legal': ShieldCheckIcon };
-
-    return (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-             <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                    <ShieldCheckIcon className="h-6 w-6 text-white bg-bbva-accent p-1 rounded-md" />
-                    <h3 className="text-lg font-semibold text-gray-800">Alertas de Cumplimiento y Plazos</h3>
-                </div>
-                <HelpTooltip content="Esta sección te notifica proactivamente sobre plazos fiscales, legales y documentación que requiere tu atención para mantener tu empresa al día." />
-            </div>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-                {COMPLIANCE_ALERTS_DATA.map(alert => {
-                    const Icon = iconMap[alert.type];
-                    return (
-                        <div 
-                            key={alert.id} 
-                            onClick={() => alert.targetScreen && onNavigate(alert.targetScreen)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { alert.targetScreen && onNavigate(alert.targetScreen); }}}
-                            tabIndex={alert.targetScreen ? 0 : -1}
-                            role={alert.targetScreen ? "button" : undefined}
-                            aria-label={`Alerta: ${alert.title}`}
-                            className={`p-4 rounded-lg border-l-4 ${severityStyles[alert.severity]} ${alert.targetScreen ? 'cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-bbva-accent' : ''} transition-colors`}
-                        >
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-start space-x-3">
-                                    <Icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="font-semibold">{alert.title}</p>
-                                        <p className="text-sm">{alert.details}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right flex-shrink-0 ml-4">
-                                    <p className="text-sm font-bold">{alert.dueDate}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    );
+const parseDate = (dateString: string): Date => {
+    // Handle format "Vence en X días"
+    if (dateString.includes('días')) {
+        const days = parseInt(dateString.match(/\d+/)?.[0] ?? '0');
+        const dt = new Date();
+        dt.setDate(dt.getDate() + days);
+        return dt;
+    }
+    const parts = dateString.split('/');
+    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
 };
 
-
-// --- NEW PRODUCT RECOMMENDATIONS COMPONENT ---
-const AiProductRecommendationsCard: React.FC<{ onNavigate: (screen: string) => void }> = ({ onNavigate }) => {
-    const iconMap = { 'credit-card': CreditCardIcon, 'chart-bar': ChartBarIcon, 'shield-check': ShieldCheckIcon };
-
-    return (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-             <div className="flex items-center justify-between mb-4">
-                 <div className="flex items-center space-x-3">
-                    <LightBulbIcon className="h-6 w-6 text-white bg-bbva-accent p-1 rounded-md" />
-                    <h3 className="text-lg font-semibold text-gray-800">Recomendaciones Financieras IA</h3>
-                </div>
-                <HelpTooltip content="Basado en tu perfil y actividad, la IA te sugiere productos y servicios financieros que pueden optimizar tu tesorería, reducir riesgos o mejorar tu rentabilidad." />
-            </div>
-            <div className="space-y-4">
-                {PRODUCT_RECOMMENDATIONS_DATA.map(rec => {
-                    const Icon = iconMap[rec.icon];
-                    return (
-                        <div key={rec.id} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg">
-                            <Icon className="h-8 w-8 text-bbva-accent flex-shrink-0 mt-1" />
-                            <div>
-                                <p className="font-semibold text-bbva-blue">{rec.title}</p>
-                                <p className="text-sm text-gray-600">{rec.description}</p>
-                                <button 
-                                    onClick={() => rec.targetScreen && onNavigate(rec.targetScreen)}
-                                    disabled={!rec.targetScreen}
-                                    className="text-sm font-bold text-bbva-accent hover:underline mt-1 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
-                                        Saber más
-                                </button>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    );
-}
-
-// --- MAIN DASHBOARD ---
 const Dashboard: React.FC<{ onNavigate: (screen: string) => void }> = ({ onNavigate }) => {
+    const [kpis, setKpis] = useState(initialKpis);
+    const [cashFlowData, setCashFlowData] = useState<(CashFlowDataPoint & { netFlow: number; originalNetFlow?: number })[]>(CASH_FLOW_DATA);
+    const [activeScenario, setActiveScenario] = useState<SimulationScenario | null>(null);
+    
+    const welcomeMessagePromise = useMemo(() => getWelcomeSummary(), []);
+
+    const timelineEvents = useMemo((): TimelineEvent[] => {
+        const payrollEvents: TimelineEvent[] = PAYROLL_DATA
+            .filter(p => p.status === 'Pendiente de firma')
+            .map(p => ({
+                id: `pay-${p.id}`,
+                date: parseDate(p.paymentDate),
+                title: `Firma y pago de Nóminas (${p.month})`,
+                type: 'Nóminas',
+                icon: UserGroupIcon,
+                severity: 'critical'
+            }));
+
+        const leasingEvents: TimelineEvent[] = LEASING_DATA
+            .map(l => ({
+                id: `lease-${l.id}`,
+                date: parseDate(l.endDate),
+                title: `Vencimiento del contrato de leasing: ${l.asset}`,
+                type: 'Leasing',
+                icon: KeyIcon,
+                severity: 'high'
+            }));
+        
+        const complianceEvents: TimelineEvent[] = COMPLIANCE_ALERTS_DATA.map(a => ({
+                id: `comp-${a.id}`,
+                date: parseDate(a.dueDate),
+                title: a.title,
+                type: a.type === 'Legal' ? 'Legal' : 'Impuestos',
+                icon: a.type === 'Legal' ? GavelIcon : DocumentIcon,
+                severity: a.severity
+            }));
+
+        const creditEvents: TimelineEvent[] = [{
+            id: 'credit-1',
+            date: parseDate(CREDIT_LINE_DATA.nextPaymentDate),
+            title: `Pago de cuota de Línea de Crédito`,
+            type: 'Crédito',
+            icon: ReceiptPercentIcon,
+            severity: 'medium'
+        }];
+
+
+        return [...payrollEvents, ...leasingEvents, ...complianceEvents, ...creditEvents];
+    }, []);
+    
+    const criticalAlerts = useMemo(() => {
+        return COMPLIANCE_ALERTS_DATA
+            .filter(a => a.severity === 'high')
+            .sort((a,b) => parseInt(a.dueDate.match(/\d+/)?.[0] ?? '99') - parseInt(b.dueDate.match(/\d+/)?.[0] ?? '99'));
+    }, []);
+
+    const resetSimulation = () => {
+        setKpis(initialKpis);
+        setCashFlowData(CASH_FLOW_DATA);
+        setActiveScenario(null);
+    };
+
+    const handleSimulation = (scenario: SimulationScenario) => {
+        if (activeScenario?.id === scenario.id) {
+            resetSimulation();
+            return;
+        }
+
+        const newCashFlowData = CASH_FLOW_DATA.map((d, i) => {
+            let newIncome = d.income; let newExpenses = d.expenses;
+            if (scenario.id === 'pri') newIncome *= (1 + (scenario.impact.revenue / 100));
+            if (scenario.id === 'log') newExpenses *= (1 - (scenario.impact.cashFlow / 100));
+            if (scenario.id === 'inv' && d.date === 'Ene') newExpenses += 50000;
+            return { ...d, income: newIncome, expenses: newExpenses, netFlow: newIncome - newExpenses, originalNetFlow: CASH_FLOW_DATA[i].netFlow };
+        });
+
+        let newTotalBalance = initialKpis.totalBalance;
+        if (scenario.id === 'inv') newTotalBalance -= 50000;
+
+        setKpis({ totalBalance: newTotalBalance });
+        setCashFlowData(newCashFlowData);
+        setActiveScenario(scenario);
+    };
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-            <div className="lg:col-span-3 space-y-6">
-                <AiDrivenSimulatorCard />
-                <ComplianceAlertsCard onNavigate={onNavigate} />
-                <AiProductRecommendationsCard onNavigate={onNavigate} />
-            </div>
-            
-            <div className="lg:col-span-2 space-y-6 flex flex-col">
-                <div className="bg-white p-6 rounded-lg shadow-lg">
-                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-3">
-                            <SparklesIcon className="h-6 w-6 text-bbva-accent" />
-                            <h3 className="text-lg font-semibold text-gray-800">Resumen Financiero General</h3>
-                        </div>
-                         <HelpTooltip content="Aquí se muestran tus indicadores financieros más importantes para una visión rápida del estado de tu negocio." />
-                    </div>
-                     <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div>
-                            <p className="text-sm text-gray-500">Balance Total</p>
-                            <p className="text-2xl font-bold text-bbva-blue">175,340.50€</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Flujo de Caja Neto (Mes)</p>
-                            <p className="text-2xl font-bold text-bbva-blue">22,500.00€</p>
-                        </div>
-                     </div>
-                </div>
-                <div className="flex-grow min-h-0">
-                    <AiAssistantPanel 
-                        quickPrompts={[
-                            "Simula el impacto de optimizar mi logística.", 
-                            "¿Cuál es mi alerta de cumplimiento más urgente?",
-                            "Explícame más sobre el seguro de cambio de divisa.",
-                            "Genera un informe financiero para el consejo de administración."
-                        ]} 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
+                
+                {/* KPI CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <DashboardStatCard 
+                        title="Balance Total"
+                        value={MOCK_FINANCIAL_DATA.summary.totalBalance}
+                        change={5.2}
+                        format="currency"
+                        icon={BanknotesIcon}
+                    />
+                    <DashboardStatCard 
+                        title="Ventas TPV (Mes)"
+                        value={TPV_SUMMARY_DATA.totalSalesMonth}
+                        change={-1.8}
+                        format="currency"
+                        icon={CreditCardIcon}
+                    />
+                     <DashboardStatCard 
+                        title="Crédito Disponible"
+                        value={CREDIT_LINE_DATA.availableCredit}
+                        change={0}
+                        format="currency"
+                        icon={ReceiptPercentIcon}
+                    />
+                     <DashboardStatCard 
+                        title="Huella Carbono"
+                        value={SUSTAINABILITY_DATA.currentMonthFootprint}
+                        change={-11.9}
+                        format="number"
+                        unit="kg CO₂"
+                        icon={LeafIcon}
                     />
                 </div>
+                
+                {/* ALERTS AND TIMELINE */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-1">
+                        <UpcomingAlerts alerts={criticalAlerts} onNavigate={onNavigate} />
+                    </div>
+                    <div className="lg:col-span-2">
+                        <KeyEventsTimeline events={timelineEvents} />
+                    </div>
+                </div>
+                
+                {/* CHARTS AND SIMULATOR */}
+                <CashFlowChart 
+                    data={cashFlowData} 
+                    title={`Visión General de Flujo de Caja ${activeScenario ? `| Simulación: "${activeScenario.title}"` : ''}`}
+                />
+
+                <DashboardCard 
+                    title="Simulador de Estrategias IA"
+                    headerActions={
+                        activeScenario && (
+                            <button onClick={resetSimulation} className="text-xs font-medium text-red-600 hover:underline flex items-center">
+                               <XIcon className="h-4 w-4 mr-1" />
+                               Resetear
+                            </button>
+                        )
+                    }
+                >
+                    <div className="flex items-center space-x-3 mb-3">
+                        <CalculatorIcon className="h-7 w-7 text-white bg-bbva-accent p-1 rounded-lg" />
+                        <div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Analiza el impacto potencial de decisiones estratégicas en tus finanzas.</p>
+                            <HelpTooltip content="Selecciona un escenario para visualizar su impacto en la gráfica de Flujo de Caja." />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        {SIMULATION_SCENARIOS_DATA.map(scenario => (
+                            <button key={scenario.id} onClick={() => handleSimulation(scenario)} className={`p-2.5 border dark:border-gray-700 rounded-lg text-left transition-all duration-200 ${activeScenario?.id === scenario.id ? 'bg-bbva-accent shadow-md' : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+                                <p className={`font-semibold text-xs ${activeScenario?.id === scenario.id ? 'text-white' : 'text-gray-800 dark:text-gray-200'}`}>{scenario.title}</p>
+                                <p className={`text-[11px] ${activeScenario?.id === scenario.id ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>{scenario.description}</p>
+                            </button>
+                        ))}
+                    </div>
+                </DashboardCard>
+
+            </div>
+
+            <div className="lg:col-span-1 h-[calc(100vh-88px)] sticky top-4">
+                <AiAssistantPanel 
+                    title="Copiloto IA"
+                    initialMessagePromise={welcomeMessagePromise}
+                    quickPrompts={[
+                        "Resume mi salud financiera actual.",
+                        "¿Cuál es el impacto de aumentar los precios un 5%?",
+                        "Proyecta mi flujo de caja para el próximo trimestre.",
+                    ]}
+                />
             </div>
         </div>
     );

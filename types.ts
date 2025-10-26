@@ -1,3 +1,5 @@
+import { ComponentType } from "react";
+
 // FIX: Removed mock data and circular imports. This file should only contain type definitions.
 export interface Account {
   id: string;
@@ -216,4 +218,45 @@ export interface ChatSession {
   title: string;
   date: string;
   messages: ChatMessage[];
+}
+
+export interface TimelineEvent {
+  id: string;
+  date: Date;
+  title: string;
+  type: 'Nóminas' | 'Leasing' | 'Impuestos' | 'Legal' | 'Crédito';
+  icon: ComponentType<{ className?: string }>;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+}
+
+export type CommunicationChannel = 'Copilot AI' | 'WhatsApp' | 'Call Center' | 'Oficina';
+
+export interface ConversationMessage {
+    sender: 'user' | 'agent' | 'bot';
+    text: string;
+    timestamp?: string;
+}
+
+export interface Communication {
+  id: string;
+  channel: CommunicationChannel;
+  date: string;
+  summary: string;
+  agent: string;
+  details: string;
+  messages?: ConversationMessage[];
+}
+
+export interface UnreadEmail {
+    id: string;
+    from: string;
+    subject: string;
+    isUrgent: boolean;
+}
+
+export interface MarketingCampaign {
+    id: string;
+    name: string;
+    description: string;
+    status: 'active' | 'pending';
 }

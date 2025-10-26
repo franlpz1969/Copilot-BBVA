@@ -1,5 +1,7 @@
 {
   "name": "BBVA Empresas Copiloto IA",
   "description": "A digital CFO (Chief Financial Officer) application for businesses, providing intelligent financial assistance, predictive insights, and automated task execution. It features a conversational AI, key metric dashboards, and smart treasury management.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

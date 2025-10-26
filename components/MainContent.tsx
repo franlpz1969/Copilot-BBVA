@@ -9,7 +9,7 @@ import SustainabilityScreen from '../screens/SustainabilityScreen';
 import TPVScreen from '../screens/TPVScreen';
 import PayrollScreen from '../screens/PayrollScreen';
 import LeasingScreen from '../screens/LeasingScreen';
-import ChatHistoryScreen from '../screens/ChatHistoryScreen';
+import CommunicationHistoryScreen from '../screens/ChatHistoryScreen';
 
 const MainContent: React.FC<{ activeScreen: string; onNavigate: (screen: string) => void }> = ({ activeScreen, onNavigate }) => {
     const renderScreen = () => {
@@ -31,7 +31,7 @@ const MainContent: React.FC<{ activeScreen: string; onNavigate: (screen: string)
             case 'Sostenibilidad':
                 return <SustainabilityScreen />;
             case 'Historial':
-                return <ChatHistoryScreen />;
+                return <CommunicationHistoryScreen />;
             default:
                 return <Dashboard onNavigate={onNavigate} />;
         }
